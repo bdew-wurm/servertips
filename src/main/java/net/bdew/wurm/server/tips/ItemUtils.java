@@ -60,10 +60,13 @@ public class ItemUtils {
 
             for (Creature watcher : watchers) {
                 if (watcher.isPlayer() && watcher.hasLink()) {
-                    if (watcher.getInventory().getWurmId() == inventoryWindow)
-                        watcher.getCommunicator().sendAddToInventory(item, -1, -1, -1);
-                    else
+                    if (watcher.getInventory().getWurmId() == inventoryWindow) {
+                        watcher.getCommunicator().sendRemoveFromInventory(item, -1L);
+                        watcher.getCommunicator().sendAddToInventory(item, -1L, -1L, -1);
+                    } else {
+                        watcher.getCommunicator().sendRemoveFromInventory(item, inventoryWindow);
                         watcher.getCommunicator().sendAddToInventory(item, inventoryWindow, inventoryWindow, -1);
+                    }
                 }
             }
         }
