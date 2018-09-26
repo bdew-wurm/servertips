@@ -1,7 +1,10 @@
 package net.bdew.wurm.server.tips;
 
+import javassist.CannotCompileException;
 import javassist.ClassPool;
 import javassist.CtClass;
+import javassist.expr.ExprEditor;
+import javassist.expr.MethodCall;
 import org.gotti.wurmunlimited.modloader.classhooks.HookManager;
 import org.gotti.wurmunlimited.modloader.interfaces.Initable;
 import org.gotti.wurmunlimited.modloader.interfaces.PreInitable;
@@ -43,6 +46,7 @@ public class ServerTipsMod implements WurmServerMod, PreInitable, Initable, Serv
             CtClass ctCreature = classPool.getCtClass("com.wurmonline.server.creatures.Creature");
             CtClass ctSpellEffect = classPool.getCtClass("com.wurmonline.server.spells.SpellEffect");
             CtClass ctItemSpellEffects = classPool.getCtClass("com.wurmonline.server.items.ItemSpellEffects");
+            CtClass ctVirtualZone = classPool.getCtClass("com.wurmonline.server.zones.VirtualZone");
 
             // Hook hover text methofs
 
@@ -51,6 +55,17 @@ public class ServerTipsMod implements WurmServerMod, PreInitable, Initable, Serv
 
             ctCreature.getMethod("getHoverText", "()Ljava/lang/String;")
                     .insertAfter("return net.bdew.wurm.server.tips.Hooks.getCreatureTip(this, $_);");
+
+            // Fix moving items not getting hover
+
+            ctVirtualZone.getMethod("addItem", "(Lcom/wurmonline/server/items/Item;Lcom/wurmonline/server/zones/VolaTile;JZ)Z")
+                    .instrument(new ExprEditor() {
+                        @Override
+                        public void edit(MethodCall m) throws CannotCompileException {
+                            if (m.getMethodName().equals("sendNewMovingItem"))
+                                m.replace("$proceed($1,$2,item.getHoverText(),$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14);");
+                        }
+                    });
 
             // Update hover when enchants are added/changed/removed
 
